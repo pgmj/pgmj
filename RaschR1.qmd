@@ -38,6 +38,7 @@ execute:
   echo: false
   warning: false
   message: false
+#  cache: true
 editor_options: 
   markdown: 
     wrap: 72
@@ -46,6 +47,17 @@ bibliography:
 - references.bib
 - grateful-refs.bib
 ---
+
+```{r}
+#| label: blurb
+#| include: false
+
+### Please check for the latest version of this file at:
+### https://github.com/pgmj/pgmj/blob/main/RaschR1.qmd 
+### and the companion file with more chunks:
+### https://github.com/pgmj/pgmj/blob/main/RaschR2.qmd
+```
+
 
 ## Why Rasch analysis in R?
 
@@ -74,7 +86,7 @@ bibliography:
 
 -   Keep the page above open in a web browser
 -   We will use library(kableExtra) for tables
-    -   since it works with HTML/PDF/revealjs output
+    -   since it works with HTML/revealjs and PDF output
 
 ```{r}
 #| label: setup
@@ -149,7 +161,7 @@ df<-as.data.frame(read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategorisk
 # url <- "https://figshare.com/ndownloader/files/27953790"
 # destfile <- "gnidata.ods"
 # download.file(url, destfile, mode="wb")
-# read_ods(file = "gnidata.ods")
+# df <- read_ods(file = "gnidata.ods")
 
 df <- df %>% 
   mutate_if(is.character, as.numeric)
@@ -661,10 +673,12 @@ itemlabels %>%
   # latex_options are for PDF output
   kable_styling(latex_options = c("striped","scale_down"))
 
+ldcut<-round(dyn.cutoff,3)
+
 ```
 
 Items 1 and 3 are correlated above the relative cutoff value
-(`r round(dyn.cutoff,2)`). Looking at the item descriptions, both are
+(`r ldcut`). Looking at the item descriptions, both are
 related to working efficiently when being worried in general (item 3) or
 being worried about personal problems. As we saw in the section on item
 fit, item 3 had quite low item fit values. This is a common issue with
@@ -689,7 +703,7 @@ we will only investigate gender effects on DIF.
 ```{r}
 #| label: dif1
 # fig-cap: "DIF analysis of gender"
-#| fig-cap-location: top
+# fig-cap-location: top
 
 # set up the DIF analysis
 df.tree <- data.frame(matrix(ncol = 0, nrow = nrow(df.omit.na))) # we need to make a new dataframe
@@ -708,7 +722,7 @@ No DIF was found in our small sample.
 ```{r}
 #| label: wrightm1
 # fig-cap: Modified Wright map
-#| fig-cap-location: top
+# fig-cap-location: top
 #| fig-alt: "Three figures with the same scale on top of each other. At the top is a histogram of Person Locations, with a dotted line and gray field indicating mean/SD. In the middle is a similar histogram with Item Thresholds. At the bottom is a figure showing the individual item thresholds."
 
 item.locations<-item_difficulty[,2:ncol(item_difficulty)]
@@ -1096,7 +1110,7 @@ ple %>%
 
 ```{r}
 #| label: ordintPlot
-#| fig-cap: "Ordinal/interval relationship"
+# fig-cap: "Ordinal/interval relationship"
 #| include: false
 #| eval: false
 
@@ -1121,7 +1135,7 @@ item.fit.table$Location <- item_difficulty$Location
 
 ```{r}
 #| label: conallinf
-#| fig-cap: "InfitZSTD and item location"
+# fig-cap: "InfitZSTD and item location"
 
 cutoff_line <- RISEprimRed
 dot_color <- "black"
@@ -1150,7 +1164,7 @@ item.fit.table %>%
 
 ```{r}
 #| label: conalloutf
-#| fig-cap: "OutfitZSTD and item location"
+# fig-cap: "OutfitZSTD and item location"
 
 item.fit.table %>% 
   rownames_to_column() %>% 
@@ -1175,7 +1189,7 @@ item.fit.table %>%
 
 ```{r}
 #| label: conallpca
-#| fig-cap: "PCA of residuals first contrast loadings and item location"
+# fig-cap: "PCA of residuals first contrast loadings and item location"
 #| fig-dpi: 300
 
 pca2<-prcomp(std.resids)
