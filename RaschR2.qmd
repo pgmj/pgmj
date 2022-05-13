@@ -483,6 +483,7 @@ item.fit.table %>%
 
 # print the items in a separate table that should appear beside the item fit table
 itemlabels %>% 
+  filter(itemnr %in% names(df.omit.na)) %>%
   kbl(booktabs = T, escape = F,
       table.attr = "style='width:60%;'") %>%
   # options for HTML output
@@ -549,7 +550,7 @@ resid %>%
 
 ```
 
-We have multiple item pairs with problematic correlations:
+We have multiple item pairs with too large correlations:
 
 -   q4 with 5 and 7
 -   q7 with 8
@@ -656,7 +657,7 @@ item.fit.table %>%
 
 # print the items in a separate table that should appear beside the item fit table
 itemlabels %>% 
-  filter(!itemnr %in% removed_items) %>% 
+  filter(itemnr %in% names(df.omit.na)) %>%
   kbl(booktabs = T, escape = F,
       table.attr = "style='width:60%;'") %>%
   # options for HTML output
@@ -711,11 +712,12 @@ resid %>%
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
   kable_styling(latex_options = c("striped"))
+ldcut<-round(dyn.cutoff,3)
 
 ```
 
 Item 1 and 9 are still correlated above the cutoff
-(`r round(dyn.cutoff)`). Both items contain wording about being
+(`r ldcut`). Both items contain wording about being
 upset/angry about things that are unexpected or outside of one's
 control.
 
@@ -726,8 +728,8 @@ of these items to see how they compare.
 
 ```{r}
 #| label: wrightm1
-#| fig-cap: Modified Wright map
-#| fig-cap-location: top
+# fig-cap: Modified Wright map
+# fig-cap-location: top
 #| fig-dpi: 300
 #| fig-alt: "Three figures with the same scale on top of each other. At the top is a histogram of Person Locations, with a dotted line and gray field indicating mean/SD. In the middle is a similar histogram with Item Thresholds. At the bottom is a figure showing the individual item thresholds."
 
@@ -904,10 +906,10 @@ itempar(pctree.out, node = c(2:3)) %>% # identify the nodes to compare (see plot
   dplyr::rename('Age 18-29' = '2', # rename numerical node names to interpretable text
                 'Age 30+' = '3') %>%
   rownames_to_column(var = "Item") %>%
+  mutate(Item = names(df.omit.na)) %>% 
   #mutate(Medel = rowMeans(.[2:3]), Stdev = rowSds(as.matrix(.[2:3]))) %>%
   mutate(Difference = .data[['Age 18-29']] - .data[['Age 30+']]) %>%
   mutate(across(where(is.numeric), round, 3)) %>%
-  mutate(Item = str_remove_all(Item, "[difdata]")) %>%
   #arrange(desc(Skillnad)) %>%
   mutate(Difference = cell_spec(Difference, color = ifelse(Difference < -0.5, "red",
                                                      ifelse(Difference > 0.5, "red", "black")))) %>%
@@ -927,7 +929,7 @@ itempar(pctree.out, node = c(2:3)) %>% # identify the nodes to compare (see plot
 
 # print the items in a separate table that should appear beside the item fit table
 itemlabels %>% 
-  filter(!itemnr %in% removed_items) %>% 
+  filter(itemnr %in% names(df.omit.na)) %>% 
   kbl(booktabs = T, escape = F,
       table.attr = "style='width:60%;'") %>%
   # options for HTML output
@@ -1001,26 +1003,30 @@ standard deviations.
 #| eval: false
 
 ### sample code for when you have many nodes to compare
-# itempar(pctree.out, node = c(3,6,8:10,13:15)) %>% 
+### creates mean, sd, and biggest difference in each row/item
+# itempar(pctree.out, node = c(4,5,7,8,10,13:15)) %>%
 #   as.data.frame() %>%
 #   t() %>%
 #   as.data.frame() %>%
-#   dplyr::rename('<=2006' = '3', 
-#                 '<=2008' = '6',
-#                 '<=2010' = '8',
-#                 '>2010' = '9',
-#                 '>2012' = '10',
+#   dplyr::rename('2006' = '4', 
+#                 '>2006' = '5',
+#                 '<=2010' = '7',
+#                 '>2010' = '8',
+#                 '<=2014' = '10',
 #                 '<=2016' = '13',
-#                 '> 2016' ='14',
+#                 '>2016' ='14',
 #                 '>2018' = '15') %>%
 #   rownames_to_column(var = "Item") %>%
+#   mutate(Item = names(df.omit.na)) %>% 
 #   mutate(Medel = rowMeans(.[2:9]), Stdev = rowSds(as.matrix(.[2:9]))) %>%
 #   #  mutate(Difference = .data[['Åk 9']] - .data[['Gy 2']]) %>%
 #   mutate(across(where(is.numeric), round, 3)) %>%
-#   mutate(Item = str_remove_all(Item, "[difdata]")) %>%
 #   #arrange(desc(Skillnad)) %>%
-# #  mutate(Difference = cell_spec(Difference, color = ifelse(Difference < -0.5, "red",
-# #                                                     ifelse(Difference > 0.5, "red", "black")))) %>%
+#   #  mutate(Difference = cell_spec(Difference, color = ifelse(Difference < -0.5, "red",
+#   #                                                     ifelse(Difference > 0.5, "red", "black")))) %>%
+#   rowwise() %>% 
+#   mutate(MaxDiff = (max(c_across(c(2:9)))) - min(c_across(c(2:9)))) %>% 
+#   ungroup() %>% 
 #   kbl(booktabs = T, escape = F) %>%
 #   # bootstrap options are for HTML output
 #   kable_styling(bootstrap_options = c("striped", "hover"), 
@@ -1028,8 +1034,8 @@ standard deviations.
 #                 full_width = F,
 #                 font_size = 12,
 #                 fixed_thead = T) %>% # when there is a long list in the table
-# #  column_spec(c(2:3), color = "red") %>% 
-# #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
+#   #  column_spec(c(2:3), color = "red") %>% 
+#   #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
 #   column_spec(c(1,10:11), bold = T) %>% 
 #   kable_classic(html_font = "Lato") %>% 
 #   # latex_options are for PDF output
@@ -1061,8 +1067,8 @@ item.fit <- eRm::itemfit(person.locations.estimate)
 
 ```{r}
 #| label: wrightm2
-#| fig-cap: Modified Wright map
-#| fig-cap-location: top
+# fig-cap: Modified Wright map
+# fig-cap-location: top
 #| fig-alt: "Three figures with the same scale on top of each other. At the top is a histogram of Person Locations, with a dotted line and gray field indicating mean/SD. In the middle is a similar histogram with Item Thresholds. At the bottom is a figure showing the individual item thresholds."
 
 item.locations<-item_difficulty[,2:ncol(item_difficulty)]
@@ -1312,7 +1318,7 @@ scale. The peak test information value is `r round(peak.tif,2)`, and
 
 ```{r}
 #| label: personfit1
-#| fig-cap: "Person locations and Person infit ZSTD"
+# fig-cap: "Person locations and Person infit ZSTD"
 
 # seems like the person map is reversed? compare to histogram 
 person.fit <- eRm::personfit(person.locations.estimate)
