@@ -1,5 +1,6 @@
 ---
-title: "Rasch in R, part 1"
+title: "Rasch in R and Quarto, part 1"
+subtitle: "Intro and WAAQ-7"
 title-block-banner: "#009ca6"
 author: 
   name: Magnus Johansson
@@ -21,13 +22,13 @@ format:
     fig-dpi: 300
   pdf:
     papersize: a4
-    documentclass: report #article, report or book
-    classoption: [onecolumn, portrait]
+    documentclass: article #article, report or book
+    classoption: [twocolumn, portrait]
   revealjs:
     theme: default
     logo: rise_logo_quarto.png
-    chalkboard: true
-    self-contained: false
+    chalkboard: false
+    self-contained: true
 #    footer: 'Material skapat av magnus.p.johansson@ri.se'
     mainfont: 'Lato'
     slide-level: 4
@@ -119,6 +120,13 @@ RISEgrey2 <- "#c8c8c8"
 RISEgrey3 <- "#828282"
 RISEgrey4 <- "#555555"
 
+# set some colors used later
+cutoff_line <- RISEprimRed
+dot_color <- "black"
+backg_color <- RISEprimGreenLight
+
+# set fontsize for all tables
+r.fontsize <- 15
 
 ### first we pre-set our chosen cut-off values for some commonly used indices:
 msq_min <- 0.7
@@ -142,7 +150,6 @@ df<-as.data.frame(read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategorisk
 # destfile <- "gnidata.ods"
 # download.file(url, destfile, mode="wb")
 # read_ods(file = "gnidata.ods")
-
 
 df <- df %>% 
   mutate_if(is.character, as.numeric)
@@ -172,7 +179,8 @@ for (i in 1:7) {
 
 # Load item information
 itemlabels<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/WAAQitemlabels.xls")
-
+#responseOptions<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 2)
+#introText<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 3)
 ```
 
 ## Background information
@@ -197,16 +205,14 @@ itemlabels %>%
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "center",
                 full_width = T,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = T) %>% 
   column_spec(1, bold = T) %>% 
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped"))
+  kable_styling(latex_options = c("striped","scale_down"))
   
 ```
-
-
 
 ### Participants
 
@@ -232,15 +238,14 @@ dif.gender %>%
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "center",
                 full_width = T,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = T) %>% 
   column_spec(1, bold = T) %>% 
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped"))
+  kable_styling(latex_options = c("striped","scale_down"))
                 
 ```
-
 
 ### Descriptives of raw data
 
@@ -262,15 +267,15 @@ df.omit.na %>%
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "center",
                 full_width = F,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = T) %>% 
   column_spec(1, bold = T) %>% 
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped"))
+  kable_styling(latex_options = c("striped","scale_down"))
 ```
 
-### Descriptives - item level
+### Descriptives - item level {.scrollable}
 
 ::: panel-tabset
 ### Tile plot
@@ -309,8 +314,6 @@ for (i in 1:ncol(df.omit.na)) {
 ```
 :::
 
-
-
 #### Recoding responses
 
 There are fewer than 10 responses in category 0 for all items, which is
@@ -324,7 +327,7 @@ For item 2 the four lowest categories will be merged.
 for (i in 1:ncol(df.omit.na)) {
   df.omit.na[,i]<-recode(df.omit.na[,i],"1=0;2=1;3=2;4=3;5=4;6=5",as.factor=FALSE)
 }
-# recode a single variable, q2
+# then recode a single variable, q2
 df.omit.na$q2<-recode(df.omit.na$q2,"1=0;2=0;3=1;4=2;5=3",as.factor=FALSE)
 
 # make a new tile plot to review results
@@ -468,7 +471,9 @@ floor_eff<-round(rawMinN/nrow(df.omit.na)*100,2)
 ```
 
 The proportion of participants responding in the lowest category on all
-items (total score = 0) is `r floor_eff`%, while the proportion who respond in the highest category on all items (total score = `r rawMax`) is `r ceiling_eff`%.
+items (total score = 0) is `r floor_eff`%, while the proportion who
+respond in the highest category on all items (total score = `r rawMax`)
+is `r ceiling_eff`%.
 
 ## Dimensionality
 
@@ -507,12 +512,12 @@ pca$values %>%
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "center",
                 full_width = T,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = F) %>% 
   column_spec(1, bold = T) %>% 
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped"))
+  kable_styling(latex_options = c("striped","scale_down"))
 
 ```
 
@@ -521,10 +526,10 @@ item fit to the Rasch PCM.
 
 ### Item fit
 
-
 ```{r}
 #| label: modelfit1
 #| tbl-cap: "Item fit"
+#| tbl-cap-location: top
 #| layout-ncol: 2
 
 ### zstd is inflated with large samples (N > 500). Reduce sample size to jz and 
@@ -545,9 +550,12 @@ item fit to the Rasch PCM.
 # if you have a smaller sample, use this line instead of running the loop above
 item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, item.fit$i.outfitZ, item.fit$i.infitZ))
 colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+
+# round the numbers to 3 decimal digits
 item.fit.table <- item.fit.table %>%
     mutate(across(where(is.numeric), round, 3))
-# formatted table that highlights cutoff values in red
+
+# create table that highlights cutoff values in red
 item.fit.table %>% 
   mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
                                                      ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
@@ -562,29 +570,30 @@ item.fit.table %>%
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "left",
                 full_width = F,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = T) %>% # when there is a long list in the table
 #  column_spec(c(2:3), color = "red") %>% 
 #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
   column_spec(1, bold = T) %>% 
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped"))
+  kable_styling(latex_options = c("striped","scale_down"))
 
 # print the items in a separate table that should appear beside the item fit table
 itemlabels %>% 
+  filter(itemnr %in% names(df.omit.na)) %>% 
   kbl(booktabs = T, escape = F,
       table.attr = "style='width:60%;'") %>%
   # options for HTML output
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "center",
                 full_width = T,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = T) %>% 
   column_spec(1, bold = T) %>% 
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped"))
+  kable_styling(latex_options = c("striped","scale_down"))
 
 ```
 
@@ -617,7 +626,8 @@ for (i in 1:ncol(resid)) {
 
 ```{r}
 #| label: locdeps1tbl
-#| tbl-cap: "Residual correlations"
+# tbl-cap: "Residual correlations"
+#| layout-ncol: 2
 
 resid[upper.tri(resid)]<-NA # remove duplicate values in upper triangle
 
@@ -629,18 +639,39 @@ resid %>%
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "left",
                 full_width = F,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = T) %>% # when there is a long list in the table
   column_spec(1, bold = T) %>% 
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped"))
+  kable_styling(latex_options = c("striped","scale_down"))
+
+itemlabels %>% 
+  filter(itemnr %in% names(df.omit.na)) %>% 
+  kbl(booktabs = T, escape = F,
+      table.attr = "style='width:60%;'") %>%
+  # options for HTML output
+  kable_styling(bootstrap_options = c("striped", "hover"), 
+                position = "center",
+                full_width = T,
+                font_size = r.fontsize,
+                fixed_thead = T) %>% 
+  column_spec(1, bold = T) %>% 
+  kable_classic(html_font = "Lato") %>% 
+  # latex_options are for PDF output
+  kable_styling(latex_options = c("striped","scale_down"))
 
 ```
 
-Items 1 and 3 are correlated above the relative cutoff value (`r round(dyn.cutoff,2)`). Looking at the item descriptions, both are related to working efficiently when being worried in general (item 3) or being worried about personal problems. As we saw in the section on item fit, item 3 had quite low item fit values. This is a common issue with broad questions.
+Items 1 and 3 are correlated above the relative cutoff value
+(`r round(dyn.cutoff,2)`). Looking at the item descriptions, both are
+related to working efficiently when being worried in general (item 3) or
+being worried about personal problems. As we saw in the section on item
+fit, item 3 had quite low item fit values. This is a common issue with
+broad questions.
 
-It would be reasonable to eliminate either question 1 or 3, since they clearly overlap in content. We will leave this for an exercise.
+It would be reasonable to eliminate either question 1 or 3, since they
+clearly overlap in content. We will leave this for an exercise.
 
 ## DIF analysis
 
@@ -657,7 +688,7 @@ we will only investigate gender effects on DIF.
 
 ```{r}
 #| label: dif1
-#| fig-cap: "DIF analysis of gender"
+# fig-cap: "DIF analysis of gender"
 #| fig-cap-location: top
 
 # set up the DIF analysis
@@ -676,9 +707,8 @@ No DIF was found in our small sample.
 
 ```{r}
 #| label: wrightm1
-#| fig-cap: Modified Wright map
+# fig-cap: Modified Wright map
 #| fig-cap-location: top
-#| fig-dpi: 300
 #| fig-alt: "Three figures with the same scale on top of each other. At the top is a histogram of Person Locations, with a dotted line and gray field indicating mean/SD. In the middle is a similar histogram with Item Thresholds. At the bottom is a figure showing the individual item thresholds."
 
 item.locations<-item_difficulty[,2:ncol(item_difficulty)]
@@ -800,14 +830,14 @@ pi.locations %>%
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "left",
                 full_width = F,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = T) %>% # when there is a long list in the table
 #  column_spec(c(2:3), color = "red") %>% 
 #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
   column_spec(1, bold = T) %>% 
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped"))
+  kable_styling(latex_options = c("striped","scale_down"))
 
 ```
 
@@ -815,10 +845,6 @@ pi.locations %>%
 
 "Test information" shows the collective information based on the
 combination of all items into a unidimensional scale.
-
-"Item information" shows individual curves indicating the amount of
-information contributed by each item.
-
 
 ```{r}
 #| label: tif1
@@ -833,7 +859,7 @@ psimatrix$psX <- seq(-6, 6, length.out = 1001L)
 
 ggplot(psimatrix) + 
   geom_point(aes(x=psX, y=psY), size = 0.1, color = dot_color) +
-  geom_hline(yintercept = 3.33, color = cutoff_line, linetype = 2, size = 0.7) +
+  geom_hline(yintercept = 3.33, color = cutoff_line, linetype = 2, size = 0.5) +
   geom_hline(yintercept = 5, color = cutoff_line, linetype = 2, size = 0.7) + 
   scale_y_continuous(breaks=seq(0, 8, by = 1)) +
   scale_x_continuous(breaks=seq(-6, 6, by = 1)) +
@@ -848,15 +874,25 @@ ggplot(psimatrix) +
                                 colour = "white")
   )
 
+# eRm functions to create TIF plot:
 #plotINFO(df.erm, type = "test") # show only test information
 #abline(h = 3.33, col = "chartreuse") # indicate TIF 3.33 = PSI 0.70
 #abline(h = 5, col = "chartreuse3") # indicate TIF 5 = PSI 0.80
-plotINFO(df.erm, type = "item", legpos = "topleft") # get item information curves
+
 ```
 
-The horizontal light green line (TIF 3.33) indicates the conventional
-lower cutoff for reliability of 0.7, while the darker green line at TIF =
-5 indicates reliability of 0.8.
+The horizontal lines at TIF 3.33 and 5.0 indicate the conventional lower
+cutoff for acceptable reliability of 0.7 and 0.8, respectively.
+
+#### Item information
+"Item information" shows individual curves indicating the amount of
+information contributed by each item.
+
+```{r}
+#| label: iteminf
+
+plotINFO(df.erm, type = "item", legpos = "topleft") # get item information curves
+```
 
 ### Floor/ceiling effects - test parameters
 
@@ -922,18 +958,22 @@ interval from `r psep_min` til `r psep_max` logits.
 **`r round(nWithinRel/length(pthetas)*100,2)`%** of participants are
 located within that area.
 
-**`r round(nCeilingRel/length(pthetas)*100,1)`%** have person locations above the cutoff for reliability 0.7 and **`r round(nFloorRel/length(pthetas)*100,1)`%** are below.
+**`r round(nCeilingRel/length(pthetas)*100,1)`%** have person locations
+above the cutoff for reliability 0.7 and
+**`r round(nFloorRel/length(pthetas)*100,1)`%** are below.
 
 Person separation as a point estimate is **`r round(PSI$sep.rel,3)`**.
 
-**`r round(nCeilingThresh/length(pthetas)*100,1)`%** have person locations above the highest item threshold (`r round(max_thresh,2)`) and **`r round(nFloorThresh/length(pthetas)*100,1)`%** are below the lowest item threshold (`r round(min_thresh,2)`).
-
+**`r round(nCeilingThresh/length(pthetas)*100,1)`%** have person
+locations above the highest item threshold (`r round(max_thresh,2)`) and
+**`r round(nFloorThresh/length(pthetas)*100,1)`%** are below the lowest
+item threshold (`r round(min_thresh,2)`).
 
 ### Person fit
 
 ```{r}
 #| label: personfit1
-#| fig-cap: "Person locations and Person infit ZSTD"
+# fig-cap: "Person locations and Person infit ZSTD"
 
 # seems like the person map is reversed? compare to histogram 
 person.fit <- eRm::personfit(person.locations.estimate)
@@ -946,6 +986,7 @@ nPgoodfit<-(nPfit-(nCeilingPfit+nFloorPfit))
 
 hist(person.fit$p.infitZ, col = RISEprimGreen, xlim = c(-4,6), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
 
+# check whether there are excluded observations, and if found, adjust thetas2 df
 if (length(person.fit$excl_obs_num) > 0L) {
   thetas2[person.fit$excl_obs_num,] <- NA
   thetas2 <- na.omit(thetas2)
@@ -959,6 +1000,12 @@ df.pfit$`Person infit ZSTD` <- person.fit$p.infitZ
 cutoff_line <- RISEprimRed
 dot_color <- "black"
 backg_color <- RISEprimGreenLight
+```
+
+#### Person location and infit ZSTD
+
+```{r}
+#| label: plocinfz
 
 df.pfit %>% 
   ggplot(aes(x=`Person infit ZSTD`, y=`Person locations`, label="")) +
@@ -979,14 +1026,15 @@ df.pfit %>%
 
 ```
 
-**`r round(nCeilingPfit/nPfit*100,1)`%** have person infit t above the cutoff 2.0 and **`r round(nFloorPfit/nPfit*100,1)`%** are below -2.0. Thus, **`r round(nPgoodfit/nPfit*100,1)`%** are within +/- 2 infit ZSTD.
-
+**`r round(nCeilingPfit/nPfit*100,1)`%** have person infit t above the
+cutoff 2.0 and **`r round(nFloorPfit/nPfit*100,1)`%** are below -2.0.
+Thus, **`r round(nPgoodfit/nPfit*100,1)`%** are within +/- 2 infit ZSTD.
 
 ## Item parameters
 
 ```{r}
 #| label: itemparams
-#| tbl-cap: "Item thresholds and locations"
+# tbl-cap: "Item thresholds and locations"
 
 item_difficulty %>% 
   mutate(across(where(is.numeric), round, 2)) %>% 
@@ -996,17 +1044,16 @@ item_difficulty %>%
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "left",
                 full_width = F,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = T) %>% # when there is a long list in the table
 #  column_spec(c(2:3), color = "red") %>% 
 #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
   column_spec(1, bold = T) %>% 
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped"))
+  kable_styling(latex_options = c("striped","scale_down"))
 
 ```
-
 
 ## Ordinal to interval transformation table
 
@@ -1024,8 +1071,6 @@ ple$'SE (0-100)'<-round((ple$`SE (Logits)`/(0.83/8)),1) # approximated from look
 ple$'MU (0-100)'<-(ple$'SE (0-100)')*2
 ```
 
-
-
 ```{r}
 #| label: ordintTbl
 #| tbl-cap: "Ordinal-interval transformation table"
@@ -1038,14 +1083,14 @@ ple %>%
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "left",
                 full_width = F,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = T) %>% # when there is a long list in the table
 #  column_spec(c(2:3), color = "red") %>% 
 #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
   column_spec(1, bold = T) %>% 
   kable_classic(html_font = "Lato") %>% 
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped")) %>% 
+  kable_styling(latex_options = c("striped","scale_down")) %>% 
   footnote(general = "SE = Standard Error. Multiply by 2 for MU = Measurement Uncertainty")
 ```
 
@@ -1074,11 +1119,9 @@ item.fit.table$Location <- item_difficulty$Location
 
 ```
 
-
 ```{r}
 #| label: conallinf
 #| fig-cap: "InfitZSTD and item location"
-#| fig-dpi: 300
 
 cutoff_line <- RISEprimRed
 dot_color <- "black"
@@ -1102,12 +1145,12 @@ item.fit.table %>%
   )
 
 ```
+
 ## Construct alley outfit
 
 ```{r}
 #| label: conalloutf
 #| fig-cap: "OutfitZSTD and item location"
-#| fig-dpi: 300
 
 item.fit.table %>% 
   rownames_to_column() %>% 
@@ -1180,21 +1223,20 @@ pkgs %>%
   kable_styling(bootstrap_options = c("striped", "hover"),
                 position = "left",
                 full_width = F,
-                font_size = 12,
+                font_size = r.fontsize,
                 fixed_thead = T) %>% # when there is a long list in the table
   column_spec(1, bold = T) %>%
   kable_classic(html_font = "Lato") %>%
   # latex_options are for PDF output
-  kable_styling(latex_options = c("striped"))
+  kable_styling(latex_options = c("striped","scale_down"))
 ```
 
 ## Exercises
 
-1. Make a table of partipant age distribution
-2. Eliminate either item 1 or 3 and check the effects on reliability
-3. Run a DIF analysis using age as DIF variable
-    + first add the dif.age variable in the setup chunk
-    + then duplicate the DIF chunk and modify code
+1.  Make a table of partipant age distribution
+2.  Eliminate either item 1 or 3 and check the effects on reliability
+3.  Run a DIF analysis using age as DIF variable
+    -   first add the dif.age variable in the setup chunk
+    -   then duplicate the DIF chunk and modify code
 
 ## References
-
