@@ -7,7 +7,7 @@ author:
   affiliation: RISE Research Institutes of Sweden
   affiliation-url: https://ri.se/shic
   orcid: 0000-0003-1669-592X
-date: '2022-05-10'
+date: '2022-05-18'
 format: 
   html:
     toc: true
@@ -33,12 +33,12 @@ format:
     mainfont: 'Lato'
     slide-level: 4
     scrollable: true
-    smaller: true
+    smaller: false
 execute:
   echo: false
   warning: false
   message: false
-#  cache: true
+  cache: true
 editor_options: 
   markdown: 
     wrap: 72
@@ -58,7 +58,6 @@ bibliography:
 ### https://github.com/pgmj/pgmj/blob/main/RaschR2.qmd
 ```
 
-
 ## Why Rasch analysis in R?
 
 ::: incremental
@@ -70,7 +69,7 @@ bibliography:
     -   (with Quarto/Rmarkdown)
 :::
 
-## Agenda
+### Agenda overview
 
 ::: incremental
 -   Sample analysis with provided data and code
@@ -80,13 +79,47 @@ bibliography:
     -   Confirmatory and/or exploratory
 :::
 
-## Quarto formatting basics
+### Quarto formatting basics
 
 <https://quarto.org/docs/authoring/markdown-basics.html>
 
 -   Keep the page above open in a web browser
 -   We will use library(kableExtra) for tables
     -   since it works with HTML/revealjs and PDF output
+    -   even though library(formattable) looks nicer...
+
+### Exercise 1
+
+::: incremental
+- I'll walk you through the Rstudio/Quarto interface
+- You'll run the setup code chunk, and practice navigation a bit
+    + Enable/disable _Outline_
+    + Navigate with Outline
+    + Navigate with _chunks_
+    + Switch between _source_ and _visual_ editor
+    + Changing size of the quadrant windows
+    + Look at the objects _df_ and _itemlabels_
+:::
+
+### Exercise 2
+
+- We will walk through the code chunks together
+- Learn what they do, but not how (in detail)
+- I'll explain some basic R concepts as we move ahead
+- Focus on how you can structure the analysis
+- Discuss the output briefly
+    + feedback on how to improve is welcome :)
+- Small exercises are described at the end of the file
+    
+### Exercise 3 (later on)
+
+- In the folder "Exercise2" you will find a .qmd file
+- It contains a setup block that will import a dataset (PSS-14)
+- You can practice using this file (RaschR1) as a template
+    + copy code chunks for your analysis from this file to the other file
+    + copy code, run the chunks, check the output, write commentary. **Repeat**
+    + _there is a file called "Exercise2solution" that shows how I did the analysis_
+
 
 ```{r}
 #| label: setup
@@ -195,7 +228,7 @@ itemlabels<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Base
 #introText<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 3)
 ```
 
-## Background information
+## Background information {.smaller}
 
 The Work-related Acceptance and Action Questionnaire [@bond2013] is a
 measure of psychological flexibility contextualized to a workplace
@@ -226,7 +259,7 @@ itemlabels %>%
   
 ```
 
-### Participants
+### Participants {.smaller}
 
 We have `r nrow(df.omit.na)` participants and their gender distribution
 is shown in the table below. All participants are Swedish adults and the
@@ -287,7 +320,7 @@ df.omit.na %>%
   kable_styling(latex_options = c("striped","scale_down"))
 ```
 
-### Descriptives - item level {.scrollable}
+### Descriptives - item level
 
 ::: panel-tabset
 ### Tile plot
@@ -303,12 +336,13 @@ df.omit.na %>%
   scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
   scale_x_continuous("Response", expand = c(0, 0), breaks = 0:7) + # change breaks to fit number of response categories
   ggtitle("Items") +
+  ylab("") +
   theme(axis.text.x = element_text(size = 8)) +
   geom_text(aes(label=n), colour = "orange") 
 
 ```
 
-### Barplots {.scrollable}
+### Barplots
 
 ```{r}
 #| label: alt-descriptives
@@ -326,7 +360,7 @@ for (i in 1:ncol(df.omit.na)) {
 ```
 :::
 
-#### Recoding responses
+#### Recoding responses {.smaller}
 
 There are fewer than 10 responses in category 0 for all items, which is
 problematic for the analysis. We will merge the two lowest categories.
@@ -351,6 +385,7 @@ df.omit.na %>%
   scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
   scale_x_continuous("Response", expand = c(0, 0), breaks = 0:7) + # change breaks to fit number of response categories
   ggtitle("Items") +
+  ylab("") +
   theme(axis.text.x = element_text(size = 8)) +
   geom_text(aes(label=n), colour = "orange") 
 
@@ -359,7 +394,7 @@ df.omit.na %>%
 Some cells still have fewer than 10 responses. Let's look at the
 response categories using Rasch modeling to produce ICC plots.
 
-## Analysis of response categories
+## Analysis of response categories {.smaller}
 
 ```{r}
 #| label: respcat1
@@ -386,7 +421,6 @@ merged.
 
 ```{r}
 #| label: recode2
-#| code-fold: true
 #| layout-ncol: 2
 
 df.omit.na$q1<-recode(df.omit.na$q1,"1=0;2=1;3=2;4=3;5=4",as.factor=FALSE)
@@ -402,11 +436,10 @@ plotICC(df.erm, xlim = c(-6, 6), # change the theta interval to display
 
 Response categories are working as expected, after the adjustments made.
 
-### Floor/ceiling effects - raw data
+### Floor/ceiling effects - raw data {.smaller}
 
 ```{r}
 #| label: rawdist2
-#| fig-dpi: 300
 
 # get info on thresholds
 item.estimates <- eRm::thresholds(df.erm)
@@ -487,7 +520,7 @@ items (total score = 0) is `r floor_eff`%, while the proportion who
 respond in the highest category on all items (total score = `r rawMax`)
 is `r ceiling_eff`%.
 
-## Dimensionality
+## Dimensionality {.smaller}
 
 The eRm package, which uses Conditional Maximum Likelihood (CML)
 estimation, will be used primarily. For this analysis, the Partial
@@ -536,13 +569,12 @@ pca$values %>%
 Since the eigenvalues support unidimensionality, we move on to look at
 item fit to the Rasch PCM.
 
-### Item fit
+### Item fit {.smaller}
 
 ```{r}
 #| label: modelfit1
-#| tbl-cap: "Item fit"
-#| tbl-cap-location: top
 #| layout-ncol: 2
+#| tbl-column: 2
 
 ### zstd is inflated with large samples (N > 500). Reduce sample size to jz and 
 ### run analysis yz random samples to get average ZSTD (defined in r setup chunk)
@@ -598,7 +630,7 @@ itemlabels %>%
       table.attr = "style='width:60%;'") %>%
   # options for HTML output
   kable_styling(bootstrap_options = c("striped", "hover"), 
-                position = "center",
+                position = "right",
                 full_width = T,
                 font_size = r.fontsize,
                 fixed_thead = T) %>% 
@@ -612,14 +644,7 @@ itemlabels %>%
 Values in red are beyond the pre-set cutoff values. We'll leave them for
 now.
 
-### Residual correlations
-
-A correlation matrix is created based on the Rasch model residuals for
-each item.
-
-The average correlation is calculated, and item pairs that correlate
-more than the pre-set cutoff value of `r loc_dep` above the average
-correlation are indicated in red in the table below.
+### Residual correlations {.smaller}
 
 ```{r}
 #| label: locdeps1
@@ -640,13 +665,14 @@ for (i in 1:ncol(resid)) {
 #| label: locdeps1tbl
 # tbl-cap: "Residual correlations"
 #| layout-ncol: 2
+#| tbl-column: 2
 
 resid[upper.tri(resid)]<-NA # remove duplicate values in upper triangle
 
 resid %>% 
    mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x >= dyn.cutoff ~ "red", TRUE ~ "black")))) %>%  
   kbl(booktabs = T, escape = F, 
-      table.attr = "style='width:70%;'") %>%
+      table.attr = "style='width:50%;'") %>%
   # bootstrap options are for HTML output
   kable_styling(bootstrap_options = c("striped", "hover"), 
                 position = "left",
@@ -661,10 +687,10 @@ resid %>%
 itemlabels %>% 
   filter(itemnr %in% names(df.omit.na)) %>% 
   kbl(booktabs = T, escape = F,
-      table.attr = "style='width:60%;'") %>%
+      table.attr = "style='width:65%;'") %>%
   # options for HTML output
   kable_styling(bootstrap_options = c("striped", "hover"), 
-                position = "center",
+                position = "right",
                 full_width = T,
                 font_size = r.fontsize,
                 fixed_thead = T) %>% 
@@ -677,17 +703,22 @@ ldcut<-round(dyn.cutoff,3)
 
 ```
 
+A correlation matrix is created based on the Rasch model residuals for
+each item. The average correlation is calculated, and item pairs that correlate
+more than the pre-set cutoff value of `r loc_dep` above the average
+correlation are indicated in red in the table below.
+
 Items 1 and 3 are correlated above the relative cutoff value
-(`r ldcut`). Looking at the item descriptions, both are
-related to working efficiently when being worried in general (item 3) or
-being worried about personal problems. As we saw in the section on item
-fit, item 3 had quite low item fit values. This is a common issue with
-broad questions.
+(`r ldcut`). Looking at the item descriptions, both are related to
+working efficiently when being worried in general (item 3) or being
+worried about personal problems. As we saw in the section on item fit,
+item 3 had quite low item fit values. This is a common issue with broad
+questions.
 
 It would be reasonable to eliminate either question 1 or 3, since they
 clearly overlap in content. We will leave this for an exercise.
 
-## DIF analysis
+## DIF analysis {.smaller}
 
 Our sample is underpowered to conduct a proper DIF-analysis of any of
 the demographic variables available (gender/age). N \> 250 per subgroup
@@ -819,9 +850,8 @@ p3 <- ggplot() +
   xlab('') +
   ylab('Thresholds') +
   scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
-  scale_y_continuous() +
   scale_y_reverse() +
-  geom_vline(xintercept = item.mean, color = RISEcompGreenDark, linetype = 2) +
+  geom_vline(xintercept = item.mean, color = RISEprimRed, linetype = 2) +
   annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean-item.thresh.sd), xmax = (item.mean+item.thresh.sd), alpha = .2) +
   geom_text(hjust = 1.1, vjust = 1) +
   theme_bw() +
@@ -855,7 +885,7 @@ pi.locations %>%
 
 ```
 
-### Reliability
+### Reliability {.smaller}
 
 "Test information" shows the collective information based on the
 combination of all items into a unidimensional scale.
@@ -877,7 +907,7 @@ ggplot(psimatrix) +
   geom_hline(yintercept = 5, color = cutoff_line, linetype = 2, size = 0.7) + 
   scale_y_continuous(breaks=seq(0, 8, by = 1)) +
   scale_x_continuous(breaks=seq(-6, 6, by = 1)) +
-  labs(title = "Test information", x = "Logits", y = "Test information") +
+  labs(x = "Logits", y = "Test information") +
   theme(
   panel.background = element_rect(fill = backg_color,
                                 colour = backg_color,
@@ -898,7 +928,8 @@ ggplot(psimatrix) +
 The horizontal lines at TIF 3.33 and 5.0 indicate the conventional lower
 cutoff for acceptable reliability of 0.7 and 0.8, respectively.
 
-#### Item information
+#### Item information {.smaller}
+
 "Item information" shows individual curves indicating the amount of
 information contributed by each item.
 
@@ -908,7 +939,7 @@ information contributed by each item.
 plotINFO(df.erm, type = "item", legpos = "topleft") # get item information curves
 ```
 
-### Floor/ceiling effects - test parameters
+### Floor/ceiling effects - test parameters {.smaller}
 
 ```{r}
 #| label: floorc1
@@ -1016,7 +1047,7 @@ dot_color <- "black"
 backg_color <- RISEprimGreenLight
 ```
 
-#### Person location and infit ZSTD
+#### Person location and infit ZSTD {.smaller}
 
 ```{r}
 #| label: plocinfz
@@ -1249,7 +1280,8 @@ pkgs %>%
 
 1.  Make a table of partipant age distribution
 2.  Eliminate either item 1 or 3 and check the effects on reliability
-3.  Run a DIF analysis using age as DIF variable
+3.  Bonus if you are quick:
+    -   Run a DIF analysis using age as DIF variable
     -   first add the dif.age variable in the setup chunk
     -   then duplicate the DIF chunk and modify code
 
