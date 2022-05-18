@@ -165,7 +165,7 @@ highlighted with green backgrounds.
 
 ```{r}
 #| label: showitems
-#| tbl-cap: "Items in the Swedish WAAQ"
+#| tbl-cap: "Items in the Swedish PSS-10"
 #| tbl-cap-location: top
 
 itemlabels %>% 
@@ -193,7 +193,7 @@ workplaces [@johansson2021; @johansson2021a].
 
 ```{r}
 #| label: genderdistr
-#| tbl-cap: "Gender distribution in sample"
+#| tbl-cap: "Gender and age distribution in sample"
 #| tbl-cap-location: top
 #| layout-ncol: 2
 
@@ -730,7 +730,6 @@ of these items to see how they compare.
 #| label: wrightm1
 # fig-cap: Modified Wright map
 # fig-cap-location: top
-#| fig-dpi: 300
 #| fig-alt: "Three figures with the same scale on top of each other. At the top is a histogram of Person Locations, with a dotted line and gray field indicating mean/SD. In the middle is a similar histogram with Item Thresholds. At the bottom is a figure showing the individual item thresholds."
 
 item.locations<-item_difficulty[,2:ncol(item_difficulty)]
@@ -827,9 +826,8 @@ p3 <- ggplot() +
   xlab('') +
   ylab('Thresholds') +
   scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
-  scale_y_continuous() +
   scale_y_reverse() +
-  geom_vline(xintercept = item.mean, color = RISEcompGreenDark, linetype = 2) +
+  geom_vline(xintercept = item.mean, color = RISEprimRed, linetype = 2) +
   annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean-item.thresh.sd), xmax = (item.mean+item.thresh.sd), alpha = .2) +
   geom_text(hjust = 1.1, vjust = 1) +
   theme_bw() +
@@ -1165,9 +1163,8 @@ p3 <- ggplot() +
   xlab('') +
   ylab('Thresholds') +
   scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
-  scale_y_continuous() +
   scale_y_reverse() +
-  geom_vline(xintercept = item.mean, color = RISEcompGreenDark, linetype = 2) +
+  geom_vline(xintercept = item.mean, color = RISEprimRed, linetype = 2) +
   annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean-item.thresh.sd), xmax = (item.mean+item.thresh.sd), alpha = .2) +
   geom_text(hjust = 1.1, vjust = 1) +
   theme_bw() +
