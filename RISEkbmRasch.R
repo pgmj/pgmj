@@ -15,11 +15,12 @@
 #'   mirt
 #' 
 #' #' @export
-#' #' 
+#' #'
 
 ##### Show items based on itemlabels file
+# file needs two columns, labeled "itemnr" and "item".
 
-Rlistitems <- function(dfin, pdf.out) {
+RIlistitems <- function(dfin, pdf.out) {
   if(missing(pdf.out)) {
     itemlabels %>% 
       filter(itemnr %in% names(dfin)) %>% 
@@ -44,9 +45,11 @@ Rlistitems <- function(dfin, pdf.out) {
 }
 
 
+##### Running the Rasch PCM model using eRm, and 
+# conducting a PCA of residuals to get eigenvalues
+# set option "no.table" to TRUE to avoid output of table
 
-
-Rpcm <- function(dfin, no.table) {
+RIpcm <- function(dfin, no.table) {
   if(missing(no.table)) {
   df.erm<-PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
   # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
@@ -88,12 +91,18 @@ Rpcm <- function(dfin, no.table) {
     std.resids <- item.fit$st.res
     # PCA of Rasch residuals
     pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
+    # create vector with top 5 eigenvalues
+    eigenv <- pca$values %>%
+      round(2) %>%
+      head(5)
   }
 }
 
-#####
 
-Rtileplot <- function(dfin) {
+##### Create tile plot for all items, also showing the count of
+# responses in each response category for each item
+
+RItileplot <- function(dfin) {
   dfin %>% 
     pivot_longer(everything()) %>% 
     dplyr::count(name, value) %>% 
@@ -107,9 +116,10 @@ Rtileplot <- function(dfin) {
     geom_text(aes(label=n), colour = "orange") 
 }
 
-#####
 
-Rbarplot <- function(dfin) {
+##### Create individual bar plots for all items.
+
+RIbarplot <- function(dfin) {
   for (i in 1:ncol(dfin)) {
     barplot(table(dfin[,i]), col="#8dc8c7",
             main=names(dfin[i]),
@@ -119,21 +129,511 @@ Rbarplot <- function(dfin) {
 }
 
 
-##### this doesn't make the plot?
+##### Create table with summarized responses
 
-Rrespcats <- function(dfin) {
-  mirt.rasch <- mirt(dfin, model=1, itemtype='Rasch') # unidimensional Rasch model
-  plot(mirt.rasch, type="trace")
+RIallresp <- function(dfin, pdf.out) {
+  if(missing(pdf.out)) {
+    dfin %>% 
+      pivot_longer(everything()) %>% 
+      dplyr::count(value) %>% 
+      mutate(percent = (100 * n / sum(n)) %>% round(digits = 1)) %>%
+      rename('Response category' = 'value', 
+             'Number of responses' = 'n',
+             'Percent' = 'percent') %>%
+      formattable(list(
+        `Response category` = formatter("span", style = ~ style(font.weight = "bold"))),
+        table.attr = 
+                    'class=\"table table-striped\" style="font-size: 15px; 
+                  font-family: Lato; width: 50%"')
+  } else {
+    dfin %>% 
+      pivot_longer(everything()) %>% 
+      dplyr::count(value) %>% 
+      mutate(percent = (100 * n / sum(n)) %>% round(digits = 1)) %>%
+      rename('Response category' = 'value', 
+             'Number of responses' = 'n',
+             'Percent' = 'percent') %>%
+      kbl(booktabs = T, escape = F, table.attr = "style='width:40%;'") %>%
+      # options for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"), 
+                    position = "center",
+                    full_width = F,
+                    font_size = r.fontsize,
+                    fixed_thead = T) %>% 
+      column_spec(1, bold = T) %>% 
+      kable_classic(html_font = "Lato") %>% 
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped","scale_down"))
+  }
 }
 
 
-Ritemcats <- function(dfin, items) {
+##### Create a figure with ICC plots for all items
+
+RIrespcats <- function(dfin) {
+  mirt.rasch <- mirt(dfin, model=1, itemtype='Rasch') # unidimensional Rasch model
+  plot(mirt.rasch, type="trace") # create ICC plots for all items
+}
+
+
+##### look at individual ICC plots. "items" can be a vector with multiple items.
+
+RIitemcats <- function(dfin, items) {
   # individual plots for those two items:
-  df.erm<-PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+  df.erm<-PCM(dfin) # run PCM, partial credit model
   plotICC(df.erm, xlim = c(-6, 6), # change the theta interval to display
           legpos = FALSE, # change legpos to TRUE if you want the legend displayed 
           ylab = "Probability", xlab = "Person location/ability",
           item.subset = items)
 }
-
 #make this escape the "hit return to see next plot"
+
+
+##### Floor/ceiling effects based on raw data (ordinal scores)
+# results in a barplot and two value objects: ceiling_eff and floor_eff, both percentages
+
+RIrawdist <- function(dfin) {
+  df.erm<-PCM(dfin) # run PCM model
+  # get info on thresholds
+  item.estimates <- eRm::thresholds(df.erm)
+  item_difficulty <- item.estimates[["threshtable"]][["1"]]
+  item_difficulty<-as.data.frame(item_difficulty)
+  
+  # all items should have lowest category 0, making 0 the lowest total score
+  rawMin <- 0 
+  
+  # get the number of thresholds above 0, to calculate max total raw score
+  rawMax <- item_difficulty %>% 
+    select(starts_with("Threshold")) %>% 
+    pivot_longer(everything()) %>% 
+    na.omit() %>% 
+    count() %>% 
+    pull()
+  
+  # what is the lowest score in the sample?
+  rawMinX <- dfin %>%
+    mutate(rowsums = rowSums(.)) %>%
+    count(rowsums) %>% 
+    arrange(rowsums) %>% 
+    head(1) %>% 
+    pull(rowsums)
+  
+  # if lowest participant score is higher than 0, we have no floor effect
+  if (rawMinX > 0) {
+    rawMinN <- 0
+  } else { # if lowest participant score is 0, how many participants have scored 0?
+    rawminN <- df.omit.na %>%
+      mutate(rowsums = rowSums(.)) %>%
+      count(rowsums) %>% 
+      arrange(rowsums) %>% 
+      head(1) %>% 
+      pull(n) 
+  }
+  
+  # what is the highest score in the sample?
+  rawMaxX <- df.omit.na %>%
+    mutate(rowsums = rowSums(.)) %>%
+    count(rowsums) %>% 
+    arrange(desc(rowsums)) %>% 
+    head(1) %>% 
+    pull(rowsums)
+  
+  # if highest score is below max rawscore, we have no ceiling effect
+  if (rawMaxX < rawMax) {
+    rawMaxN <- 0
+  } else {
+    rawMaxN <- df.omit.na %>%
+      mutate(rowsums = rowSums(.)) %>%
+      count(rowsums) %>% 
+      arrange(desc(rowsums)) %>% 
+      head(1) %>% 
+      pull(n) 
+  }
+  # ceiling effect
+  ceiling_eff<-round(rawMaxN/nrow(df.omit.na)*100,2)
+  # floor effect
+  floor_eff<-round(rawMinN/nrow(df.omit.na)*100,2)
+  
+  # create barplot to show sum score distribution
+  dfin %>% 
+    mutate('Raw sum score' = rowSums(.)) %>% 
+    pull() %>% 
+    table() %>%   
+    barplot(main = "Distribution of summed ordinal raw scores", 
+            ylab = "Number of participants",
+            sub = paste0("Min score: ", floor_eff, "% , max score: ", ceiling_eff, "%."),
+            xlim = c(0, rawMax),
+            space = 0,
+            col = RISEprimGreen)
+            
+}
+
+
+##### Create table with Rasch item fit values for each item.
+### zstd is inflated with large samples (N > 500). Optional function to reduce 
+# sample size to jz and run analysis using yz random samples to get average ZSTD
+
+RIitemfitPCM <- function(dfin, jz, yz) {
+  if(missing(jz)) {
+    df.erm<-PCM(dfin) # run PCM model
+    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+    item.estimates <- eRm::thresholds(df.erm)
+    item_difficulty <- item.estimates[["threshtable"]][["1"]]
+    item_difficulty<-as.data.frame(item_difficulty)
+    item.se <- item.estimates$se.thresh
+    person.locations.estimate <- person.parameter(df.erm)
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    # collect data to df
+    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, item.fit$i.outfitZ, item.fit$i.infitZ))
+    colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    
+    # create table that highlights cutoff values in red
+    item.fit.table %>% 
+      mutate(across(where(is.numeric), round, 3)) %>% 
+      mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
+                                                               ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
+      mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
+                                                             ifelse(InfitZSTD > zstd_max, "red", "black")))) %>%
+      mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
+                                                             ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
+      mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
+                                                           ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
+      kbl(booktabs = T, escape = F) %>%
+      # bootstrap options are for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"), 
+                    position = "left",
+                    full_width = F,
+                    font_size = r.fontsize,
+                    fixed_thead = T) %>% # when there is a long list in the table
+      #  column_spec(c(2:3), color = "red") %>% 
+      #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
+      column_spec(1, bold = T) %>% 
+      kable_classic(html_font = "Lato") %>% 
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped","scale_down"))
+  } else {
+    df.erm<-PCM(dfin) # run PCM model
+    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+    item.estimates <- eRm::thresholds(df.erm)
+    item_difficulty <- item.estimates[["threshtable"]][["1"]]
+    item_difficulty<-as.data.frame(item_difficulty)
+    item.se <- item.estimates$se.thresh
+    person.locations.estimate <- person.parameter(df.erm)
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    
+    # ZSTD multisample
+    outfitZ<-c()
+    infitZ<-c()
+    for (i in 1:yz) {
+      df.new <- dfin[sample(1:nrow(dfin), jz), ]
+      df.new <- na.omit(df.new)
+      df.z <- PCM(df.new)
+      ple <- person.parameter(df.z)
+      item.fit.z <- eRm::itemfit(ple)
+      outfitZ<-cbind(outfitZ,item.fit.z$i.outfitZ)
+      infitZ<-cbind(infitZ,item.fit.z$i.infitZ)
+    }
+    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, rowMeans(outfitZ), rowMeans(infitZ)))
+    colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    
+    # create table that highlights cutoff values in red
+    item.fit.table %>% 
+      mutate(across(where(is.numeric), round, 3)) %>% 
+      mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
+                                                               ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
+      mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
+                                                             ifelse(InfitZSTD > zstd_max, "red", "black")))) %>%
+      mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
+                                                             ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
+      mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
+                                                           ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
+      kbl(booktabs = T, escape = F) %>%
+      # bootstrap options are for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"), 
+                    position = "left",
+                    full_width = F,
+                    font_size = r.fontsize,
+                    fixed_thead = T) %>% # when there is a long list in the table
+      #  column_spec(c(2:3), color = "red") %>% 
+      #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
+      column_spec(1, bold = T) %>% 
+      kable_classic(html_font = "Lato") %>% 
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped","scale_down"))
+  }
+}
+
+
+##### Correlation matrix of Rasch residuals
+# mandatory option to set relative cutoff-value over average correlation (usually 0.2-0.3)
+
+RIresidcorr <- function(dfin, cutoff) {
+  mirt.rasch <- mirt(dfin, model=1, itemtype='Rasch') # unidimensional Rasch model
+  resid=residuals(mirt.rasch, type="Q3", digits=2)
+  diag(resid) <- NA # make the diagonal of correlation matrix NA instead of 1
+  dyn.cutoff<-mean(resid, na.rm=T) + cutoff # create variable indicating dynamic cutoff at 0.3 above average
+  resid<-as.data.frame(resid)
+  
+  # table
+  resid[upper.tri(resid)]<-NA # remove duplicate values in upper triangle
+  #ldcut<-round(dyn.cutoff,3)
+  
+  resid %>% 
+    mutate(across(where(is.numeric), round, 2)) %>%
+    mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x >= dyn.cutoff ~ "red", TRUE ~ "black")))) %>%  
+    kbl(booktabs = T, escape = F, 
+        table.attr = "style='width:50%;'") %>%
+    # bootstrap options are for HTML output
+    kable_styling(bootstrap_options = c("striped", "hover"), 
+                  position = "left",
+                  full_width = F,
+                  font_size = r.fontsize,
+                  fixed_thead = T) %>% # when there is a long list in the table
+    column_spec(1, bold = T) %>% 
+    kable_classic(html_font = "Lato") %>% 
+    # latex_options are for PDF output
+    kable_styling(latex_options = c("striped","scale_down")) %>% 
+    footnote(general = paste0("Relative cut-off value (highlighted in red) is ", round(dyn.cutoff,3), ", which is ", cutoff, " above the average correlation."))
+  
+}
+
+
+##### Targeting, Wright map derivative
+
+RItargeting <- function(dfin, pi.tbl) {
+  df.erm<-PCM(dfin) # run PCM model
+  # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+  item.estimates <- eRm::thresholds(df.erm)
+  item_difficulty <- item.estimates[["threshtable"]][["1"]]
+  item_difficulty<-as.data.frame(item_difficulty)
+  item.se <- item.estimates$se.thresh
+  person.locations.estimate <- person.parameter(df.erm)
+  item.fit <- eRm::itemfit(person.locations.estimate)
+  
+  item.locations<-item_difficulty[,2:ncol(item_difficulty)]
+  names(item.locations) <- paste0("T", c(1:ncol(item.locations))) #re-number items
+  itemloc.long <- item.locations %>%
+    rownames_to_column() %>% 
+    dplyr::rename(names = 'rowname') %>%
+    pivot_longer(cols=starts_with('T'), 
+                 names_to ='thresholds', 
+                 values_to = 'par_values' )
+  ### create df for ggplot histograms
+  # person locations
+  thetas<-as.data.frame(person.locations.estimate$theta.table)
+  pthetas<-thetas$`Person Parameter`
+  # item locations
+  thresholds<-c()
+  for (i in 2:ncol(item_difficulty)) {
+    thresholds<-c(thresholds,item_difficulty[,i])
+  }
+  ### items and persons in the same variable
+  #create data frame with 0 rows and 3 columns
+  df.locations <- data.frame(matrix(ncol = 2, nrow = 0))
+  #provide column names
+  colnames(df.locations) <- c('type', 'locations')
+  # change type of data
+  df.locations$type<-as.character(df.locations$type)
+  df.locations$locations<-as.numeric(df.locations$locations)
+  # insert labels in accurate amounts (N+items)
+  nper<-nrow(df.omit.na)
+  nperp<-nper+1
+  nthr<-length(thresholds)+nper
+  df.locations[1:nper,1]<-paste0("Persons")
+  df.locations[nperp:nthr,1]<-paste0("Item thresholds")
+  # insert data from vectors with thetas and thresholds
+  df.locations$locations<-c(pthetas,thresholds)
+  # change type to class factor
+  df.locations$type<-as.factor(df.locations$type)
+  
+  # get mean/SD for item/person locations
+  pi.locations <- data.frame(matrix(ncol = 3, nrow = 3))
+  
+  item.mean <- round(mean(item_difficulty$Location),2)
+  item.sd <- round(sd(item_difficulty$Location),2)
+  item.thresh.sd <- item_difficulty %>% 
+    select(starts_with("Threshold")) %>% 
+    pivot_longer(everything()) %>% 
+    pull() %>% 
+    na.omit() %>% sd() %>% round(2)
+  person.mean <- round(mean(pthetas),2)
+  person.sd <- round(sd(pthetas),2)
+  #provide column names
+  colnames(pi.locations) <- c('','Mean', 'SD')
+  pi.locations[1,1] <- "Items"
+  pi.locations[1,2] <- round(mean(item_difficulty$Location),2)
+  pi.locations[1,3] <- round(sd(item_difficulty$Location),2)
+  pi.locations[2,1] <- "Item thresholds"
+  pi.locations[2,2] <- round(mean(item_difficulty$Location),2)
+  pi.locations[2,3] <- item.thresh.sd
+  pi.locations[3,1] <- "Persons"
+  pi.locations[3,2] <- round(mean(pthetas),2)
+  pi.locations[3,3] <- round(sd(pthetas),2)
+  
+  # Person location histogram
+  p2<-ggplot() + 
+    geom_histogram(data=subset(df.locations, type=="Persons"), 
+                   aes(locations, fill="Persons", y= ..count..)) +
+    xlab('') +
+    ylab('Persons') +
+    scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
+    geom_vline(xintercept = person.mean, color = RISEcompGreenDark, linetype = 2) +
+    annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean-person.sd), xmax = (person.mean+person.sd), alpha = .2) +
+    geom_text(hjust = 1.1, vjust = 1) +
+    theme_bw() +
+    theme(legend.position = 'none',
+          text=element_text(family = "sans"))
+  
+  # Item Threshold location histogram
+  p3 <- ggplot() +
+    geom_histogram(data=subset(df.locations, type=="Item thresholds"), 
+                   aes(locations, y= ..count..)) + 
+    xlab('') +
+    ylab('Thresholds') +
+    scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
+    scale_y_reverse() +
+    geom_vline(xintercept = item.mean, color = RISEprimRed, linetype = 2) +
+    annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean-item.thresh.sd), xmax = (item.mean+item.thresh.sd), alpha = .2) +
+    geom_text(hjust = 1.1, vjust = 1) +
+    theme_bw() +
+    theme(legend.position = 'none')
+  
+  # make plot with each items thresholds shown as dots
+  p1=ggplot(itemloc.long, aes(x = names, y = par_values, label = thresholds, color = names)) +
+    geom_point() + 
+    geom_text(hjust = 1.1, vjust = 1) + 
+    ylab('Location (logit scale)') + 
+    xlab('Items') + 
+    scale_y_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
+    theme_bw() + 
+    theme(legend.position = 'none') + 
+    coord_flip() +
+    labs(caption = paste0("Person location average: ", pi.locations[3,2], " (SD ", pi.locations[3,3],"), Item threshold location average: ",
+                          pi.locations[2,2], " (SD ", pi.locations[2,3], ").")) +
+    theme(plot.caption = element_text(hjust = 0, face = "italic"))
+  
+  # combine plots together to create Wright map, and let the individual item threshold plot have some more space
+  plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.3))
+
+}
+
+
+##### Reliability, test information
+
+RItif <- function(dfin) {
+  df.erm <- PCM(dfin)
+  item.estimates <- eRm::thresholds(df.erm)
+  item_difficulty <- item.estimates[["threshtable"]][["1"]]
+  item_difficulty<-as.data.frame(item_difficulty)
+  item.se <- item.estimates$se.thresh
+  person.locations.estimate <- person.parameter(df.erm)
+  item.fit <- eRm::itemfit(person.locations.estimate)
+  # person locations
+  thetas<-as.data.frame(person.locations.estimate$theta.table)
+  pthetas<-thetas$`Person Parameter`
+  # item locations
+  thresholds<-c()
+  for (i in 2:ncol(item_difficulty)) {
+    thresholds<-c(thresholds,item_difficulty[,i])
+  }
+  #create data frame with 0 rows and 3 columns
+  df.locations <- data.frame(matrix(ncol = 2, nrow = 0))
+  #provide column names
+  colnames(df.locations) <- c('type', 'locations')
+  # change type of data
+  df.locations$type<-as.character(df.locations$type)
+  df.locations$locations<-as.numeric(df.locations$locations)
+  # insert labels in accurate amounts (N+items)
+  nper<-nrow(df.omit.na)
+  nperp<-nper+1
+  nthr<-length(thresholds)+nper
+  df.locations[1:nper,1]<-paste0("Persons")
+  df.locations[nperp:nthr,1]<-paste0("Item thresholds")
+  # insert data from vectors with thetas and thresholds
+  df.locations$locations<-c(pthetas,thresholds)
+  # change type to class factor
+  df.locations$type<-as.factor(df.locations$type)
+  
+  
+  # we need to make a new dataframe for the test information plot/curve
+  psimatrix <- data.frame(matrix(ncol = 2, nrow = 1001)) 
+  names(psimatrix) <- c("psY","psX")
+  # this gets 1001 "dots" for the scale information variable y
+  psimatrix$psY <- test_info(df.erm, seq(-6, 6, length.out = 1001L)) 
+  # this is the x variable in the TIF figure
+  psimatrix$psX <- seq(-6, 6, length.out = 1001L)
+  
+  # check if TIF goes above 3.3
+  peak.tif <- psimatrix %>% slice(which.max(psY)) %>% select(psY) %>% pull()
+  
+  if (peak.tif > 3.32) {
+    # now find where the cutoff points are for 3.33 on the theta (x) variable 
+    # this provides the highest and lowest value into two variables
+    psep_min <- psimatrix %>% filter(psX < 0) %>% slice(which.min(abs(psY - 3.33))) %>% select(psX) %>% pull()
+    psep_max <- psimatrix %>% filter(psX > 0) %>%  slice(which.min(abs(psY - 3.33))) %>% select(psX) %>% pull()
+  } else {
+    psep_min = 0
+    psep_max = 0
+  }
+  
+  # calculate how many participants cross the cutoffs
+  nCeilingRel<-length(which(pthetas > psep_max))
+  nFloorRel<-length(which(pthetas < psep_min))
+  nWithinRel<-(length(pthetas)-(nCeilingRel+nFloorRel))
+  PSI<-SepRel(person.locations.estimate)
+  
+  ### if there are large gaps in targeting, it is useful to calculate how many are affected:
+  # calculate how many respondents are in the gap area
+  # nWithinGap<-c()
+  # nWithinGap[pthetas > psep_max  & pthetas < psep_min] <- 1
+  # 
+  # pGap <- nWithinGap %>%
+  #   as.integer() %>%
+  #   table() %>%
+  #   as.tibble() %>%
+  #   dplyr::select(n) %>%
+  #   pull()
+  
+  # Retrieve the lowest and highest item thresholds into vector variables
+  
+  min_thresh <- df.locations %>% 
+    filter(type == "Item thresholds") %>% 
+    arrange(locations) %>% 
+    slice(1) %>% 
+    pull()
+  
+  max_thresh <- df.locations %>% 
+    filter(type == "Item thresholds") %>% 
+    arrange(desc(locations)) %>% 
+    slice(1) %>% 
+    pull()
+  
+  # calculate how many participants cross the cutoffs
+  nCeilingThresh<-length(which(pthetas > max_thresh))
+  nFloorThresh<-length(which(pthetas < min_thresh))
+  
+  ggplot(psimatrix) + 
+    geom_point(aes(x=psX, y=psY), size = 0.1, color = dot_color) +
+    geom_hline(yintercept = 3.33, color = cutoff_line, linetype = 2, size = 0.5) +
+    geom_hline(yintercept = 5, color = cutoff_line, linetype = 2, size = 0.7) + 
+    scale_y_continuous(breaks=seq(0, 8, by = 1)) +
+    scale_x_continuous(breaks=seq(-6, 6, by = 1)) +
+    labs(x = "Logits", y = "Test information") +
+    labs(caption = paste0("Test Information 3.33 (PSI 0.7) is reached between ", psep_min, " and ", psep_max, " logits, where ", 
+                          round(nWithinRel/length(pthetas)*100,2), "% of the participants are located. \n",
+                          round(nCeilingRel/length(pthetas)*100,1), "% of participants have locations above the upper cutoff, and ",
+                          round(nFloorRel/length(pthetas)*100,1), "% are below the lower cutoff. \n",
+                          round(nCeilingThresh/length(pthetas)*100,1), "% have person locations above the highest item threshold (",
+                          round(max_thresh,2), ") and ", round(nFloorThresh/length(pthetas)*100,1), "% are below the lowest item threshold (",
+                          round(min_thresh,2), ").")) +
+    theme(plot.caption = element_text(hjust = 0, face = "italic")) +
+    theme(
+      panel.background = element_rect(fill = backg_color,
+                                      colour = backg_color,
+                                      size = 0.5, linetype = "solid"),
+      panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                      colour = "white"), 
+      panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                      colour = "white")
+    )
+}
