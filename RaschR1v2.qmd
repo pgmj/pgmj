@@ -514,8 +514,8 @@ No DIF was found in our small sample.
 RItargeting(df.omit.na) # use option dich = TRUE for dichotomous data
 
 # another option is:
-# df.erm <- PCM(df.omit.na)
-# plotPImap(df.erm)
+df.erm <- PCM(df.omit.na)
+plotPImap(df.erm, sorted = TRUE)
 
 ```
 
