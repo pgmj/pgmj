@@ -42,7 +42,7 @@ execute:
 editor_options: 
   markdown: 
     wrap: 72
-  chunk_output_type: console
+  chunk_output_type: inline
 bibliography: references.bib
 ---
 
@@ -297,6 +297,7 @@ for (i in 1:ncol(df.omit.na)) {
 }
 
 RItileplot(df.omit.na)
+RIbardiv(df.omit.na)
 
 ```
 
@@ -439,7 +440,8 @@ of these items to see how they compare.
 #| label: wrightm1
 
 RItargeting(df.omit.na)
-
+df.erm <- PCM(df.omit.na)
+plotPImap(df.erm, sorted = TRUE)
 ```
 
 Items 1 and 9 are virtually identical in threshold locations, let's see
