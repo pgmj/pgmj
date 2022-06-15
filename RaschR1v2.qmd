@@ -53,9 +53,9 @@ bibliography:
 #| include: false
 
 ### Please check for the latest version of this file at:
-### https://github.com/pgmj/pgmj/blob/main/RaschR1.qmd 
+### https://github.com/pgmj/pgmj/blob/main/RaschR1v2.qmd 
 ### and the companion file with more code chunks:
-### https://github.com/pgmj/pgmj/blob/main/RaschR2.qmd
+### https://github.com/pgmj/pgmj/blob/main/RaschR2v2.qmd
 
 ### The R package RISEkbmRasch needs to be installed using
 # devtools::install_github("pgmj/RISEkbmRasch")
@@ -117,14 +117,14 @@ bibliography:
 
 ### Exercise 3 (later on)
 
--   In the folder "Exercise2" you will find a .qmd file
--   It contains a setup block that will import a dataset (PSS-14)
+-   In the folder "Exercise2" you will find a RaschR2 qmd file
+-   It contains a setup block that will import a dataset (PSS-10)
 -   You can practice using this file (RaschR1) as a template
     -   copy code chunks for your analysis from this file to the other
         file
     -   copy code, run the chunks, check the output, write commentary.
         **Repeat**
-    -   *there is a file called "Exercise2solution" that shows how I did
+    -   *there is a folder called "Exercise2solution" that shows how I did
         the analysis*
 
 ```{r}
