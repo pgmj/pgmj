@@ -8,6 +8,7 @@ author:
   affiliation-url: https://ri.se/shic
   orcid: 0000-0003-1669-592X
 date: '2022-06-09'
+always_allow_html: true
 format: 
   html:
     toc: true
@@ -29,11 +30,18 @@ format:
     logo: rise_logo_quarto.png
     chalkboard: false
     self-contained: true
-#    footer: 'Material skapat av magnus.p.johansson@ri.se'
+    footer: 'Material skapat av magnus.p.johansson@ri.se'
     mainfont: 'Lato'
     slide-level: 4
     scrollable: true
     smaller: false
+  docx:
+    toc: true
+    number-sections: true
+    title: "WAAQ-7"
+    subtitle: "Rasch analysis"
+    author: "Magnus Johansson"
+#    reference-doc: RISEmallMJv6.dotx
 execute:
   echo: false
   warning: false
@@ -148,7 +156,7 @@ library(reshape)
 library(knitr)
 library(cowplot)
 library(formattable)
-library(RISEkbmRasch)
+library(RISEkbmRasch) # devtools::install_github("pgmj/RISEkbmRasch")
 library(HH)
 
 ### some commands exist in multiple packages, here we define preferred ones that are frequently used
