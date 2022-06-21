@@ -517,13 +517,14 @@ No DIF was found in our small sample.
 
 ```{r}
 #| label: wrightm1
-#| fig-alt: "Three figures with the same scale on top of each other. At the top is a histogram of Person Locations, with a dotted line and gray field indicating mean/SD. In the middle is a similar histogram with Item Thresholds. At the bottom is a figure showing the individual item thresholds."
+#| fig-width: 8
+#| fig-height: 8
 
 RItargeting(df.omit.na) # use option dich = TRUE for dichotomous data
 
 # another option is:
 df.erm <- PCM(df.omit.na)
-plotPImap(df.erm, sorted = TRUE)
+plotPImap(df.erm, sorted = TRUE) # sorts items based on location (black dots)
 
 ```
 
