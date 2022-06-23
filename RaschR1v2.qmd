@@ -460,7 +460,7 @@ RIitemfitPCM(df.omit.na)
 
 ```
 
-Values in red are below/above the pre-set cutoff values (. We'll leave them for
+Values in red are below/above the pre-set cutoff values. We'll leave them for
 now.
 
 ### Residual correlations {.smaller}
@@ -474,7 +474,7 @@ RIresidcorr(df.omit.na, cutoff = 0.2)
 
 A correlation matrix is created based on the Rasch model residuals for
 each item. The average correlation is calculated, and item pairs that
-correlate more than the pre-set cutoff value of `r loc_dep` above the
+correlate more than the pre-set cutoff value (see footnote) above the
 average correlation are indicated in red in the table below.
 
 Items 1 and 3 are correlated above the relative cutoff value. 
