@@ -5,7 +5,7 @@ title-block-banner: "#009ca6"
 author: 
   name: Magnus Johansson
   affiliation: RISE Research Institutes of Sweden
-  affiliation-url: https://ri.se/shic
+  affiliation-url: https://www.ri.se/sv/vad-vi-gor/expertiser/kategoriskt-baserade-matningar
   orcid: 0000-0003-1669-592X
 date: '2022-08-16'
 always_allow_html: true
@@ -21,6 +21,7 @@ format:
     code-fold: true
     number-sections: true
     fig-dpi: 300
+    layout-align: left
   pdf:
     papersize: a4
     documentclass: article #article, report or book
@@ -50,7 +51,7 @@ execute:
 editor_options: 
   markdown: 
     wrap: 72
-  chunk_output_type: console
+  chunk_output_type: inline
 bibliography: 
 - references.bib
 - grateful-refs.bib
@@ -68,6 +69,8 @@ bibliography:
 ### The R package RISEkbmRasch needs to be installed using
 # install.packages('devtools')
 # devtools::install_github("pgmj/RISEkbmRasch")
+# package grateful is installed the same way:
+# devtools::install_github("Pakillo/grateful")
 
 ```
 
@@ -104,7 +107,7 @@ bibliography:
 ### Exercise 1
 
 ::: incremental
--   I'll walk you through the Rstudio/Quarto interface
+-   I'll walk you through the Rstudio interface
 -   You'll run the setup code chunk, and practice navigation a bit
     -   Enable/disable *Outline*
     -   Navigate with Outline
@@ -141,8 +144,12 @@ bibliography:
 #| code-fold: false
 #| include: false
 
+# two packages below require that you use devtools to install them manually:
+# first install devtools by
+# install.packages('devtools')
+
 library(car)
-library(grateful)
+library(grateful) # devtools::install_github("Pakillo/grateful")
 library(kableExtra)
 library(readxl)
 library(tidyverse)
@@ -156,7 +163,7 @@ library(matrixStats)
 library(reshape)
 library(knitr)
 library(cowplot)
-library(formattable)
+library(formattable) 
 library(RISEkbmRasch) # devtools::install_github("pgmj/RISEkbmRasch")
 library(HH)
 
@@ -262,6 +269,8 @@ min.responses <- 3
 df.omit.na <- df %>% 
   select(starts_with("WAAQ"),Sex,Age) %>%  # variables that start with "WAAQ"
   filter(length(scale.items)-rowSums(is.na(.[scale.items])) >= min.responses) # include only respondents with data for at least 3 items
+
+###
   
 # DIF variables into vectors
 dif.gender <- df.omit.na$Sex
@@ -336,7 +345,7 @@ dif.gender %>%
 Responses to all items are summarized below.
 
 ```{r}
-#| label: descriptives1
+#| label: desc1
 #| tbl-cap: "Total number of responses for all items"
 RIallresp(df.omit.na)
 ```
@@ -346,29 +355,19 @@ RIallresp(df.omit.na)
 ::: panel-tabset
 ### Tile plot
 ```{r}
-#| label: descriptives1.2
+#| label: desc1.2
 RItileplot(df.omit.na)
 ```
 ### Stacked bars
 ```{r}
-#| label: descriptives1.3
+#| label: desc1.3
 RIbarstack(df.omit.na)
-```
-### Diverging bars
-```{r}
-#| label: descriptives1.4
-RIbardiv(df.omit.na)
 ```
 ### Barplots
 ```{r}
-#| label: descriptives1.5
+#| label: desc1.5
 #| layout-ncol: 2
 RIbarplot(df.omit.na)
-```
-### Guttman heatmap
-```{r}
-#| label: descriptives1.6
-RIheatmap(df.omit.na)
 ```
 :::
 
@@ -680,25 +679,15 @@ pkgs <- cite_packages(cite.tidyverse = TRUE,
                       output = "table",
                       bib.file = "grateful-refs.bib",
                       include.RStudio = TRUE)
-pkgs %>%
-  kbl(booktabs = T, escape = F,
-      table.attr = "style='width:80%;'") %>%
-  # bootstrap options are for HTML output
-  kable_styling(bootstrap_options = c("striped", "hover"),
-                position = "left",
-                full_width = F,
-                font_size = r.fontsize,
-                fixed_thead = T) %>% # when there is a long list in the table
-  column_spec(1, bold = T) %>%
-  kable_classic(html_font = "Lato") %>%
-  # latex_options are for PDF output
-  kable_styling(latex_options = c("striped","scale_down"))
+formattable(pkgs, 
+            table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 80%"')
 ```
 
 ## Exercises
 
 1.  Make a table of partipant age distribution
 2.  Eliminate either item 1 or 3 and check the effects on reliability
+    - hint: df.omit.na$item <- NULL
 3.  Bonus if you are quick:
     -   Run a DIF analysis using age as DIF variable
     -   first add the dif.age variable in the setup chunk
