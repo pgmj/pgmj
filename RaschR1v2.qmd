@@ -461,6 +461,11 @@ RIitemfitPCM(df.omit.na)
 #| tbl-cap: "PCA of Rasch model residuals"
 RIpcmPCA(df.omit.na)
 ```
+## 1st contrast loadings
+```{r}
+#| label: rasch1.load
+RIloadLoc(df.omit.na)
+```
 ### Residual correlations {.smaller}
 ```{r}
 #| label: rasch1.rcorr
@@ -471,13 +476,13 @@ RIresidcorr(df.omit.na, cutoff = 0.2)
 #| label: rasch1.targ
 RItargeting(df.omit.na)
 ```
-### Targeting sorterad
+### Targeting sorted
 ```{r}
 #| label: rasch1.targs
 df.erm<-PCM(df.omit.na)
 plotPImap(df.erm, sorted = T)
 ```
-### Reliabilitet
+### Reliability
 ```{r}
 #| label: rasch1.rel
 RItif(df.omit.na)
@@ -562,8 +567,8 @@ RItif(df.omit.na)
 
 ```
 
-The horizontal lines at TIF 3.33 and 5.0 indicate the conventional lower
-cutoff for acceptable reliability of 0.7 and 0.8, respectively.
+The horizontal lines at TIF 3.33 and 5.0 indicate the conventional 
+cutoff values for acceptable reliability of 0.7 and 0.8, respectively.
 
 The table footnote includes information on floor/ceiling effects.
 
